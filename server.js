@@ -10,6 +10,7 @@ let mLoaded = false
 let mUrl = null
 let mPostData = null
 let mHeaders = null
+let mIp = ''
 
 const app = express()
 
@@ -71,12 +72,20 @@ app.get('/login', async (req, res) => {
     }
 })
 
+app.get('/ip', async (req, res) => {
+    res.end(mIp)
+})
+
 app.get('/', async (req, res) => {
     res.end('Fuck You')
 })
 
 
 async function startBrowser() {
+    mIp = await getIpAdress()
+
+    console.log('Ip: '+mIp)
+
     try {
         let browser = await puppeteer.launch({
             headless: false,
@@ -212,6 +221,18 @@ async function loadLoginPage() {
             break
         } catch (error) {}
     }
+}
+
+async function getIpAdress() {
+    try {
+        let response = await axios.get('https://ifconfig.me/ip')
+        let data = response.data
+        if (data) {
+            return data
+        }
+    } catch (error) {}
+
+    return ''
 }
 
 function getHostGaps(cookies) {
