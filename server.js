@@ -3,7 +3,7 @@ const puppeteer = require('puppeteer-extra')
 const bodyParser = require('body-parser')
 const express = require('express')
 const axios = require('axios')
-
+require('dotenv').config()
 
 let page = null
 let mLoaded = false
@@ -21,7 +21,6 @@ puppeteer.use(StealthPlugin())
 app.listen(process.env.PORT || 3000, ()=>{
     console.log('Listening on port 3000...')
 })
-
 
 startBrowser()
 
@@ -89,7 +88,8 @@ async function startBrowser() {
                 '--ignore-certificate-errors',
                 '--ignore-certificate-errors-skip-list',
                 '--disable-dev-shm-usage'
-            ]
+            ],
+            executablePath: process.env.NODE_ENV == 'production' ? process.env.PUPPETEER_EXECUTABLE_PATH : puppeteer.executablePath()
         })
 
         page = (await browser.pages())[0]
