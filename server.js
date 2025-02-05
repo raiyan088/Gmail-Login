@@ -28,11 +28,7 @@ app.listen(process.env.PORT || 3000, ()=>{
 startBrowser()
 
 setInterval(async () => {
-    mLoaded = false
-    console.log('Page Reloading...')
-    await loadLoginPage()
-    console.log('Page Reload Success')
-    mLoaded = true
+    await pageReload()
 }, 30*60*1000)
 
 setInterval(async () => {
@@ -47,7 +43,7 @@ app.post('/login', async (req, res) => {
                 let mData = await getLoginToken(number)
                 res.end(JSON.stringify(mData))
             } else {
-                await delay(5000)
+                await delay(10000)
                 res.end(JSON.stringify({ status:-1 }))
             }
         } else {
@@ -66,7 +62,7 @@ app.get('/login', async (req, res) => {
                 let mData = await getLoginToken(number)
                 res.end(JSON.stringify(mData))
             } else {
-                await delay(5000)
+                await delay(10000)
                 res.end(JSON.stringify({ status:-1 }))
             }
         } else {
@@ -75,6 +71,11 @@ app.get('/login', async (req, res) => {
     } else {
         res.end(JSON.stringify({ status:-1 }))
     }
+})
+
+app.get('/reload', async (req, res) => {
+    await pageReload()
+    res.end('Reload Success')
 })
 
 app.get('/', async (req, res) => {
@@ -155,6 +156,13 @@ async function startBrowser() {
     }
 }
 
+async function pageReload() {
+    mLoaded = false
+    console.log('Page Reloading...')
+    await loadLoginPage()
+    console.log('Page Reload Success')
+    mLoaded = true
+}
 
 async function getLoginToken(number) {
     try {
